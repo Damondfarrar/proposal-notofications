@@ -1,0 +1,20 @@
+{
+  "name": "smartpricing-finance-notifier",
+  "version": "1.0.0",
+  "description": "Worker that sends finance notifications when proposals are won and signing is completed.",
+  "main": "src/worker.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node src/worker.js",
+    "run:once": "node src/worker.js --once"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "axios": "^1.7.7",
+    "better-sqlite3": "^11.3.0",
+    "dotenv": "^16.4.5",
+    "nodemailer": "^6.9.15"
+  }
+}
