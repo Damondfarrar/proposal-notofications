@@ -27,3 +27,12 @@
   - [ ] show per-group subtotal + overall totals
 - [ ] Validate preview for proposal `qAPpzijfRucj`
 - [ ] Re-test with live send only after preview approval
+
+## API status filter mitigation + deployment
+- [x] Update `src/apiClient.js` to remove upstream `status=won` query and filter `WON` locally
+- [x] Update `src/worker.js` to handle upstream 5xx gracefully without fatal cycle crash
+- [ ] Commit mitigation changes on branch `blackboxai/won-filter-mitigation`
+- [ ] Push branch to `git@github.com:Damondfarrar/proposal-notofications.git`
+- [ ] Deploy on Pi from git branch and restart PM2
+- [ ] Validate 2 successful cycles and send controlled test email
+- [ ] Configure PM2 startup for reboot persistence

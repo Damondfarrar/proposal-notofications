@@ -16,15 +16,17 @@ class ApiClient {
     const response = await this.http.get("/api/proposals", {
       params: {
         page,
-        limit,
-        status: "won"
+        limit
       }
     });
 
     const payload = response.data || {};
     const items = Array.isArray(payload.data) ? payload.data : [];
+    const wonItems = items.filter(
+      (item) => String(item?.status || "").toUpperCase() === "WON"
+    );
     const pagination = payload.pagination || {};
-    return { items, pagination };
+    return { items: wonItems, pagination };
   }
 
   async getProposal(proposalId) {

@@ -129,7 +129,14 @@ async function run() {
     try {
       await processOnce();
     } catch (err) {
-      console.error("[worker] fatal cycle error:", err);
+      const status = err?.response?.status;
+      const body = err?.response?.data;
+
+      if (status >= 500) {
+        console.error("[worker] transient upstream 5xx; skipping cycle:", { status, body });
+      } else {
+        console.error("[worker] fatal cycle error:", err);
+      }
     }
 
     await sleep(config.worker.intervalSeconds * 1000);
