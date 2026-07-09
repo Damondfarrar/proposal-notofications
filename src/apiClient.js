@@ -62,7 +62,15 @@ class ApiClient {
 
   async getProposal(proposalId) {
     const response = await this.http.get(`/proposals/${proposalId}`);
-    return this.normalizeJsonPayload(response.data);
+    const payload = this.normalizeJsonPayload(response.data);
+
+    // Some environments return { data: proposal }, others return proposal directly.
+    // Normalize to always return the proposal object expected by the worker/templates.
+    if (payload && typeof payload === "object" && payload.data && typeof payload.data === "object") {
+      return payload.data;
+    }
+
+    return payload;
   }
 
   async patchProposalTags(proposalId, tags) {
