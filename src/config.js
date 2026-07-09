@@ -37,6 +37,9 @@ const config = {
   api: {
     baseUrl: required("API_BASE_URL").replace(/\/+$/, ""),
     authToken: required("API_TOKEN"),
+    authHeader: process.env.API_AUTH_HEADER || "Authorization",
+    authScheme: process.env.API_AUTH_SCHEME || "Bearer",
+    authRawToken: optionalBool("API_AUTH_RAW_TOKEN", false),
     requestTimeoutMs: optionalInt("API_TIMEOUT_MS", 20000)
   },
   smtp: {

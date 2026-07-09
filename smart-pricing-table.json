@@ -1,0 +1,4590 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "SmartPricingTable API",
+    "version": "1.0.0",
+    "description": "API documentation for SmartPricingTable application",
+    "contact": {
+      "name": "SmartPricingTable Support",
+      "url": "https://smartpricingtable.com"
+    }
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3000",
+      "description": "Development server"
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "BearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "JWT access token obtained during authentication"
+      },
+      "ApiKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "Authorization",
+        "description": "API Key authentication (format: Bearer YOUR_API_KEY)"
+      }
+    },
+    "schemas": {
+      "ProposalDetail": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Unique identifier for the proposal"
+          },
+          "org_id": {
+            "type": "string",
+            "description": "Organization that owns this proposal"
+          },
+          "name": {
+            "type": "string",
+            "description": "Proposal name/title"
+          },
+          "status": {
+            "$ref": "#/components/schemas/ProposalDisplayStatus",
+            "description": "Current workflow status of the proposal"
+          },
+          "settings": {
+            "$ref": "#/components/schemas/ApiProposalSettings",
+            "description": "Display and behavior settings for the proposal (API format, snake_case)"
+          },
+          "design": {
+            "$ref": "#/components/schemas/ProposalDesign",
+            "description": "Visual design settings"
+          },
+          "integrations": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ProposalIntegrations"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "External integration data (CRM, payment, etc.)"
+          },
+          "custom_variables": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProposalCustomVariable"
+            },
+            "description": "Custom variables used in the proposal content"
+          },
+          "status_detail": {
+            "$ref": "#/components/schemas/ProposalStatusDetail",
+            "description": "Status lifecycle and resolution details"
+          },
+          "created_at": {
+            "type": "string",
+            "description": "When the proposal was created (ISO 8601 timestamp)"
+          },
+          "updated_at": {
+            "type": "string",
+            "description": "When the proposal was last updated (ISO 8601 timestamp)"
+          },
+          "archived": {
+            "type": "boolean",
+            "description": "Whether the proposal is archived"
+          },
+          "archived_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "When the proposal was archived (ISO 8601 timestamp), or null if not archived"
+          },
+          "deleted_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "When the proposal was soft-deleted (ISO 8601 timestamp), or null if not deleted"
+          },
+          "is_template": {
+            "type": "boolean",
+            "description": "Whether this proposal is a reusable template"
+          },
+          "is_starred": {
+            "type": "boolean",
+            "description": "Whether the current user has starred this proposal"
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Tags assigned to this proposal"
+          },
+          "created_by": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ProposalUser"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "User who created the proposal"
+          },
+          "updated_by": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ProposalUser"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "User who last updated the proposal"
+          },
+          "pages": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProposalPage"
+            },
+            "description": "Ordered list of proposal pages"
+          },
+          "cached_totals": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ProposalCachedTotals"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Cached pricing totals for quick display"
+          },
+          "timestamps": {
+            "type": "object",
+            "properties": {
+              "sent": {
+                "type": "string"
+              },
+              "won": {
+                "type": "string"
+              },
+              "lost": {
+                "type": "string"
+              },
+              "firstViewed": {
+                "type": "string"
+              },
+              "lastViewed": {
+                "type": "string"
+              },
+              "openedNotifications": {
+                "$ref": "#/components/schemas/Record%3Cstring%2Cstring%3E"
+              }
+            },
+            "additionalProperties": false,
+            "description": "Key lifecycle timestamps"
+          },
+          "is_library": {
+            "type": "boolean",
+            "description": "Whether this proposal is a library item"
+          },
+          "v1_signing": {
+            "$ref": "#/components/schemas/V1SigningData",
+            "description": "V1 legacy signing data (Xodo Sign), present only for imported pending proposals"
+          }
+        },
+        "required": [
+          "id",
+          "org_id",
+          "name",
+          "status",
+          "creator",
+          "pages"
+        ],
+        "additionalProperties": false,
+        "description": "Complete proposal with all details, pages, items, and metadata"
+      },
+      "UpdateProposalApiInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "integrations": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ProposalIntegrationsInput"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "External integrations (write model — payment has settings only, no transactions)"
+          },
+          "timestamps": {
+            "type": "object",
+            "properties": {
+              "sent": {
+                "type": "string"
+              },
+              "won": {
+                "type": "string"
+              },
+              "lost": {
+                "type": "string"
+              },
+              "firstViewed": {
+                "type": "string"
+              },
+              "lastViewed": {
+                "type": "string"
+              },
+              "openedNotifications": {
+                "$ref": "#/components/schemas/Record%3Cstring%2Cstring%3E"
+              }
+            },
+            "additionalProperties": false,
+            "description": "Key lifecycle timestamps"
+          },
+          "name": {
+            "type": "string",
+            "description": "Proposal name/title"
+          },
+          "status": {
+            "$ref": "#/components/schemas/ProposalDisplayStatus",
+            "description": "Current workflow status of the proposal"
+          },
+          "settings": {
+            "$ref": "#/components/schemas/ApiProposalSettings",
+            "description": "Display and behavior settings for the proposal (API format, snake_case)"
+          },
+          "design": {
+            "$ref": "#/components/schemas/ProposalDesign",
+            "description": "Visual design settings for the proposal"
+          },
+          "custom_variables": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProposalCustomVariable"
+            },
+            "description": "Custom variables used in the proposal content"
+          },
+          "status_detail": {
+            "$ref": "#/components/schemas/ProposalStatusDetail",
+            "description": "Status lifecycle and resolution details"
+          },
+          "deleted_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "When the proposal was soft-deleted (ISO 8601 timestamp), or null if not deleted"
+          },
+          "is_template": {
+            "type": "boolean",
+            "description": "Whether this proposal is a reusable template"
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Tags assigned to this proposal"
+          }
+        },
+        "description": "Input for updating an existing proposal. Only include the fields you want to change."
+      },
+      "ProposalListItem": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Unique identifier for the proposal"
+          },
+          "status": {
+            "$ref": "#/components/schemas/ProposalDisplayStatus",
+            "description": "Current workflow status of the proposal"
+          },
+          "name": {
+            "type": "string",
+            "description": "Display name of the proposal"
+          },
+          "created_by": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ProposalUser"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "User who created the proposal"
+          },
+          "updated_by": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ProposalUser"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "User who last updated the proposal"
+          },
+          "created_at": {
+            "type": "string",
+            "description": "ISO 8601 timestamp when the proposal was created"
+          },
+          "updated_at": {
+            "type": "string",
+            "description": "ISO 8601 timestamp when the proposal was last updated"
+          },
+          "archived": {
+            "type": "boolean",
+            "description": "Whether the proposal is archived"
+          },
+          "archived_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "ISO 8601 timestamp when the proposal was archived, or null if not archived"
+          },
+          "settings": {
+            "$ref": "#/components/schemas/ApiProposalSettings",
+            "description": "Display and behavior settings for the proposal (API format, snake_case)"
+          },
+          "is_template": {
+            "type": "boolean",
+            "description": "Whether this proposal is a reusable template"
+          },
+          "is_starred": {
+            "type": "boolean",
+            "description": "Whether the current user has starred this proposal"
+          },
+          "cached_totals": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ProposalCachedTotals"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Cached pricing totals for quick display"
+          },
+          "status_detail": {
+            "$ref": "#/components/schemas/ProposalListItemStatusDetail",
+            "description": "Status lifecycle details (subset relevant to list views)"
+          },
+          "crm_linked": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "provider": {
+                    "type": "string"
+                  },
+                  "recipient_name": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "provider"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "CRM link info when proposal is linked to a CRM contact/deal"
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Tags assigned to this proposal"
+          }
+        },
+        "required": [
+          "id",
+          "status",
+          "name",
+          "created_by",
+          "updated_by",
+          "created_at",
+          "updated_at"
+        ],
+        "additionalProperties": false,
+        "description": "Summary of a proposal for use in list views"
+      },
+      "Pagination": {
+        "type": "object",
+        "description": "Pagination metadata for list endpoints",
+        "properties": {
+          "page": {
+            "type": "integer",
+            "description": "Current page number",
+            "example": 1
+          },
+          "limit": {
+            "type": "integer",
+            "description": "Items per page",
+            "example": 20
+          },
+          "total": {
+            "type": "integer",
+            "description": "Total number of items",
+            "example": 150
+          },
+          "pages": {
+            "type": "integer",
+            "description": "Total number of pages",
+            "example": 8
+          }
+        }
+      },
+      "CreateProposalApiInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "templateId": {
+            "type": "string",
+            "description": "Template ID to duplicate from"
+          },
+          "pages": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProposalPageCreateInput"
+            },
+            "description": "Pages array (for duplication, empty array prevents default page creation)"
+          },
+          "integrations": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ProposalIntegrationsInput"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "External integrations (write model — payment has settings only, no transactions)"
+          },
+          "settings": {
+            "$ref": "#/components/schemas/ApiProposalSettings",
+            "description": "Display and behavior settings for the proposal (API format, snake_case)"
+          },
+          "design": {
+            "$ref": "#/components/schemas/ProposalDesign",
+            "description": "Visual design settings for the proposal"
+          },
+          "custom_variables": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProposalCustomVariable"
+            },
+            "description": "Custom variables used in the proposal content"
+          },
+          "deleted_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "When the proposal was soft-deleted (ISO 8601 timestamp), or null if not deleted"
+          },
+          "is_template": {
+            "type": "boolean",
+            "description": "Whether this proposal is a reusable template"
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Tags assigned to this proposal"
+          },
+          "name": {
+            "type": "string",
+            "description": "Proposal name (required)"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "description": "Input for creating a new proposal."
+      },
+      "CreateProposalResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Unique identifier for the created proposal"
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "additionalProperties": false,
+        "description": "Response from creating a new proposal. Only the ID is returned;\ncallers navigate to the proposal editor which fetches the full detail."
+      },
+      "ProposalPageCreateInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "content": {
+            "type": "string",
+            "description": "Rich text content of the page"
+          },
+          "order_key": {
+            "type": "number",
+            "description": "Sort position of the page within the proposal"
+          },
+          "kind": {
+            "type": "string",
+            "description": "Type of page (e.g., content, pricing, signatures)"
+          },
+          "scopeId": {
+            "type": "string",
+            "description": "ID of the scope of work section this page belongs to"
+          },
+          "isScopeOfWork": {
+            "type": "boolean",
+            "description": "Whether this page is a scope of work pricing page"
+          },
+          "isSignaturesPage": {
+            "type": "boolean",
+            "description": "Whether this is the signatures page"
+          },
+          "screenshotUrl": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "URL of the page screenshot thumbnail"
+          },
+          "showCents": {
+            "type": "boolean",
+            "description": "Whether to display cents in price values"
+          },
+          "salesTaxPercentage": {
+            "type": "string",
+            "description": "Sales tax percentage applied to this page"
+          },
+          "lineItemsStartExpanded": {
+            "type": "string",
+            "enum": [
+              "none",
+              "all",
+              "first"
+            ],
+            "description": "Whether line items are expanded by default"
+          },
+          "selectionType": {
+            "type": "string",
+            "enum": [
+              "single",
+              "multiple",
+              "loose"
+            ],
+            "description": "How items on this page can be selected"
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Tags/labels applied to this page"
+          },
+          "metadata": {
+            "$ref": "#/components/schemas/Record%3Cstring%2Cunknown%3E"
+          },
+          "markupPercentage": {
+            "type": "string",
+            "description": "Markup percentage applied to items on this page"
+          },
+          "discounts": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "type": {
+                  "type": "string",
+                  "enum": [
+                    "fixed",
+                    "percentage"
+                  ]
+                },
+                "amount": {
+                  "type": "string"
+                },
+                "frequency": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "id",
+                "type",
+                "amount",
+                "frequency"
+              ],
+              "additionalProperties": false
+            },
+            "description": "Discount configurations for this page"
+          },
+          "hideTotalsTop": {
+            "type": "boolean",
+            "description": "Whether to hide the totals row at the top of the page"
+          },
+          "hideTotalsBottom": {
+            "type": "boolean",
+            "description": "Whether to hide the totals row at the bottom of the page"
+          },
+          "labels": {
+            "type": "object",
+            "properties": {
+              "grandTotalLabels": {
+                "$ref": "#/components/schemas/Record%3Cstring%2Cstring%3E"
+              },
+              "tax": {
+                "type": "string"
+              }
+            },
+            "additionalProperties": false,
+            "description": "Custom label overrides for this page"
+          },
+          "displayHeading": {
+            "type": "boolean",
+            "description": "Whether to display the page heading"
+          },
+          "hideSection": {
+            "type": "boolean",
+            "description": "Whether this section is hidden from view"
+          },
+          "excludeFromPdf": {
+            "type": "boolean",
+            "description": "Whether to exclude this page from PDF exports"
+          },
+          "designSettings": {
+            "$ref": "#/components/schemas/PageDesignSettings"
+          },
+          "children": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PageChild"
+            },
+            "description": "Unified ordered list of groups and side-by-sides (only on scope-of-work pages)"
+          },
+          "name": {
+            "type": "string",
+            "description": "Page name/title"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "description": "Input type for creating a new page Extends ProposalPageBase and requires proposal_id"
+      },
+      "ProposalIntegrationsInput": {
+        "type": "object",
+        "properties": {
+          "crm": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ApiProposalCRMData"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "CRM integration data to link/unlink"
+          },
+          "payment": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "settings": {
+                    "$ref": "#/components/schemas/PaymentSettings"
+                  }
+                },
+                "required": [
+                  "settings"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Payment configuration (settings only; transactions are managed server-side)"
+          }
+        },
+        "additionalProperties": false,
+        "description": "Write-side integrations input (transactions are server-managed, not client-writable)"
+      },
+      "ApiProposalSettings": {
+        "type": "object",
+        "properties": {
+          "signing": {
+            "$ref": "#/components/schemas/ApiProposalSigningSettings"
+          },
+          "recipient": {
+            "$ref": "#/components/schemas/ProposalRecipient"
+          },
+          "notifications": {
+            "$ref": "#/components/schemas/ApiProposalNotificationSettings"
+          },
+          "avoid_line_item_page_breaks": {
+            "type": "boolean"
+          },
+          "hide_pdf_download": {
+            "type": "boolean"
+          },
+          "disable_proposal_access": {
+            "type": "boolean"
+          },
+          "include_modifications_in_line_item_price": {
+            "type": "boolean"
+          },
+          "hide_unselected_from_recipient": {
+            "type": "boolean"
+          },
+          "lock_selections_from_recipient": {
+            "type": "boolean"
+          },
+          "currency": {
+            "type": "string"
+          },
+          "expiring_on": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "email_draft": {
+            "type": "object",
+            "properties": {
+              "recipients": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "name": {
+                          "type": "string"
+                        },
+                        "email": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "name",
+                        "email"
+                      ],
+                      "additionalProperties": false
+                    }
+                  }
+                ]
+              },
+              "subject": {
+                "type": "string"
+              },
+              "message": {
+                "type": "string"
+              },
+              "last_saved": {
+                "type": "string"
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "additionalProperties": {},
+        "description": "API-facing proposal settings (snake_case keys)"
+      },
+      "ProposalDesign": {
+        "type": "object",
+        "properties": {
+          "colors": {
+            "type": "object",
+            "properties": {
+              "proposal_header": {
+                "type": "object",
+                "properties": {
+                  "background": {
+                    "type": "string"
+                  },
+                  "text": {
+                    "type": "string"
+                  }
+                },
+                "additionalProperties": false
+              },
+              "group_heading": {
+                "type": "object",
+                "properties": {
+                  "background": {
+                    "type": "string"
+                  },
+                  "text": {
+                    "type": "string"
+                  },
+                  "checkbox": {
+                    "type": "string"
+                  },
+                  "checkmark": {
+                    "type": "string"
+                  },
+                  "quantity": {
+                    "type": "string"
+                  },
+                  "quantity_font": {
+                    "type": "string"
+                  }
+                },
+                "additionalProperties": false
+              },
+              "proposal_navigation": {
+                "type": "object",
+                "properties": {
+                  "background": {
+                    "type": "string"
+                  },
+                  "link": {
+                    "type": "string"
+                  },
+                  "selected_link": {
+                    "type": "string"
+                  },
+                  "highlight_color": {
+                    "type": "string"
+                  },
+                  "highlight_border": {
+                    "type": "string"
+                  }
+                },
+                "additionalProperties": false
+              },
+              "logo": {
+                "type": "object",
+                "properties": {
+                  "background": {
+                    "type": "string"
+                  },
+                  "divider_line": {
+                    "type": "string"
+                  },
+                  "url": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  }
+                },
+                "additionalProperties": false
+              },
+              "primary_button_background": {
+                "type": "string"
+              },
+              "primary_button_color": {
+                "type": "string"
+              },
+              "primary_button_border_color": {
+                "type": "string"
+              },
+              "secondary_button_background": {
+                "type": "string"
+              },
+              "secondary_button_color": {
+                "type": "string"
+              },
+              "secondary_button_border_color": {
+                "type": "string"
+              },
+              "links": {
+                "type": "object",
+                "properties": {
+                  "color": {
+                    "type": "string"
+                  }
+                },
+                "additionalProperties": false,
+                "description": "Rich text / page content hyperlinks (default black)"
+              }
+            },
+            "additionalProperties": false,
+            "description": "Color settings for proposal UI elements"
+          },
+          "backgrounds": {
+            "$ref": "#/components/schemas/ProposalDesignBackgrounds",
+            "description": "Background image and color settings"
+          },
+          "styling": {
+            "type": "object",
+            "properties": {
+              "button_radius": {
+                "type": "number"
+              },
+              "group_radius": {
+                "type": "number"
+              },
+              "button_shadow": {
+                "type": "number"
+              },
+              "group_shadow": {
+                "type": "number"
+              },
+              "button_border_width": {
+                "type": "number"
+              },
+              "quantity_radius": {
+                "type": "number"
+              },
+              "page_radius": {
+                "type": "number"
+              }
+            },
+            "additionalProperties": false,
+            "description": "Border radius, shadow, and other styling values"
+          },
+          "fonts": {
+            "type": "object",
+            "properties": {
+              "default": {
+                "type": "object",
+                "properties": {
+                  "family": {
+                    "type": "string"
+                  },
+                  "bold": {
+                    "type": "boolean"
+                  },
+                  "size": {
+                    "type": "string"
+                  }
+                },
+                "additionalProperties": false
+              },
+              "navigation": {
+                "type": "object",
+                "properties": {
+                  "family": {
+                    "type": "string"
+                  },
+                  "bold": {
+                    "type": "boolean"
+                  }
+                },
+                "additionalProperties": false
+              },
+              "heading": {
+                "type": "object",
+                "properties": {
+                  "family": {
+                    "type": "string"
+                  },
+                  "bold": {
+                    "type": "boolean"
+                  }
+                },
+                "additionalProperties": false
+              },
+              "group_heading": {
+                "type": "object",
+                "properties": {
+                  "family": {
+                    "type": "string"
+                  },
+                  "bold": {
+                    "type": "boolean"
+                  }
+                },
+                "additionalProperties": false
+              },
+              "line_item": {
+                "type": "object",
+                "properties": {
+                  "family": {
+                    "type": "string"
+                  },
+                  "bold": {
+                    "type": "boolean"
+                  }
+                },
+                "additionalProperties": false
+              },
+              "button": {
+                "type": "object",
+                "properties": {
+                  "family": {
+                    "type": "string"
+                  },
+                  "bold": {
+                    "type": "boolean"
+                  }
+                },
+                "additionalProperties": false
+              },
+              "content": {
+                "type": "object",
+                "properties": {
+                  "family": {
+                    "type": "string"
+                  },
+                  "bold": {
+                    "type": "boolean"
+                  }
+                },
+                "additionalProperties": false
+              },
+              "pricing": {
+                "type": "object",
+                "properties": {
+                  "family": {
+                    "type": "string"
+                  },
+                  "bold": {
+                    "type": "boolean"
+                  }
+                },
+                "additionalProperties": false
+              }
+            },
+            "additionalProperties": false,
+            "description": "Font family and weight settings for proposal elements"
+          },
+          "logo": {
+            "type": "object",
+            "properties": {
+              "url": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "width": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "height": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              }
+            },
+            "additionalProperties": false,
+            "description": "Company logo displayed on the proposal"
+          }
+        },
+        "additionalProperties": false,
+        "description": "Visual design settings for the proposal"
+      },
+      "ProposalCustomVariable": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Unique identifier for this custom variable"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "single-line",
+              "multi-line",
+              "number",
+              "date",
+              "dropdown"
+            ],
+            "description": "Input type of the variable"
+          },
+          "label": {
+            "type": "string",
+            "description": "Display label for the variable"
+          },
+          "order": {
+            "type": "number",
+            "description": "Sort order position of the variable"
+          },
+          "value": {
+            "type": "string",
+            "description": "Current value of the variable"
+          },
+          "who_provides": {
+            "type": "string",
+            "enum": [
+              "we-do",
+              "customer-does"
+            ],
+            "description": "Whether the variable is filled by the sender or the client"
+          },
+          "source": {
+            "type": "string",
+            "description": "Origin source of the variable (e.g. CRM integration)"
+          },
+          "required": {
+            "type": "boolean",
+            "description": "Whether the variable must be filled before sending"
+          },
+          "created_at": {
+            "type": "string",
+            "description": "ISO 8601 timestamp when the variable was created"
+          },
+          "options": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Available options for dropdown-type variables"
+          }
+        },
+        "required": [
+          "id",
+          "type",
+          "label",
+          "order",
+          "value"
+        ],
+        "additionalProperties": {},
+        "description": "A custom variable that can be used in proposal content"
+      },
+      "ProposalDesignBackgrounds": {
+        "type": "object",
+        "properties": {
+          "main": {
+            "$ref": "#/components/schemas/ProposalDesignBackground"
+          },
+          "page": {
+            "$ref": "#/components/schemas/ProposalDesignBackground"
+          }
+        },
+        "additionalProperties": false,
+        "description": "Background settings for proposal header and body sections"
+      },
+      "ProposalDesignBackground": {
+        "type": "object",
+        "properties": {
+          "image": {
+            "type": "string",
+            "description": "URL of the background image"
+          },
+          "position": {
+            "type": "string",
+            "description": "CSS background-position value"
+          },
+          "size": {
+            "type": "string",
+            "description": "CSS background-size value"
+          },
+          "repeat": {
+            "type": "string",
+            "description": "CSS background-repeat value"
+          },
+          "attachment": {
+            "type": "string",
+            "description": "CSS background-attachment value (e.g. \"fixed\", \"scroll\")"
+          },
+          "opacity": {
+            "type": "number",
+            "description": "Opacity of the background image (0 to 1)"
+          },
+          "colors": {
+            "$ref": "#/components/schemas/ProposalDesignBackgroundColors",
+            "description": "Color overrides applied with the background"
+          }
+        },
+        "additionalProperties": false,
+        "description": "Background image settings for a proposal section"
+      },
+      "ProposalDesignBackgroundColors": {
+        "type": "object",
+        "properties": {
+          "background": {
+            "type": "string",
+            "description": "Background color override"
+          },
+          "font": {
+            "type": "string",
+            "description": "Font color override"
+          }
+        },
+        "additionalProperties": false,
+        "description": "Background and font color overrides"
+      },
+      "ApiProposalSigningSettings": {
+        "type": "object",
+        "properties": {
+          "use_accept": {
+            "type": "boolean"
+          },
+          "company_signer": {
+            "type": "string"
+          },
+          "is_contact_signer": {
+            "type": "boolean"
+          },
+          "recipient_signer": {
+            "$ref": "#/components/schemas/ApiProposalSigner"
+          },
+          "additional_signers": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ApiProposalAdditionalSigner"
+            }
+          },
+          "is_multiple_signers": {
+            "type": "boolean"
+          },
+          "custom_company_signer_name": {
+            "type": "string"
+          },
+          "custom_company_signer_email": {
+            "type": "string"
+          },
+          "override_signature_page_defaults": {
+            "type": "boolean"
+          },
+          "signature_page_agreement_text": {
+            "type": "string"
+          },
+          "signature_page_company_label": {
+            "type": "string"
+          },
+          "signature_page_client_label": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": {},
+        "description": "API-facing signing settings (snake_case keys)"
+      },
+      "ProposalRecipient": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Company name of the recipient"
+          },
+          "address": {
+            "type": "string",
+            "description": "Mailing address of the recipient company"
+          },
+          "contact": {
+            "$ref": "#/components/schemas/ProposalRecipientContact",
+            "description": "Primary contact person at the recipient company"
+          },
+          "website": {
+            "type": "string",
+            "description": "Website URL of the recipient company"
+          }
+        },
+        "additionalProperties": {},
+        "description": "The client/recipient company for a proposal"
+      },
+      "ApiProposalNotificationSettings": {
+        "type": "object",
+        "properties": {
+          "override_account_defaults": {
+            "type": "boolean"
+          },
+          "rules": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProposalNotificationRule"
+            }
+          }
+        },
+        "additionalProperties": false,
+        "description": "API-facing notification settings (snake_case keys)"
+      },
+      "ProposalNotificationRule": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Unique identifier for this notification configuration"
+          },
+          "event": {
+            "$ref": "#/components/schemas/ProposalNotificationEvent",
+            "description": "The proposal event that triggers this notification"
+          },
+          "emails": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Email addresses to notify when the event occurs"
+          }
+        },
+        "required": [
+          "id",
+          "event",
+          "emails"
+        ],
+        "additionalProperties": false,
+        "description": "Notification configuration for proposal events"
+      },
+      "ProposalNotificationEvent": {
+        "type": "string",
+        "enum": [
+          "proposal_sent",
+          "proposal_opened",
+          "proposal_won",
+          "proposal_lost"
+        ],
+        "description": "Type of notification event"
+      },
+      "ProposalRecipientContact": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Full name of the contact person"
+          },
+          "email": {
+            "type": "string",
+            "description": "Email address of the contact person"
+          },
+          "phone": {
+            "type": "string",
+            "description": "Phone number of the contact person"
+          }
+        },
+        "additionalProperties": {},
+        "description": "Contact person at the recipient company"
+      },
+      "ApiProposalSigner": {
+        "type": "object",
+        "properties": {
+          "full_name": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false,
+        "description": "API-facing signer (snake_case keys)"
+      },
+      "ApiProposalAdditionalSigner": {
+        "type": "object",
+        "properties": {
+          "full_name": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          },
+          "role": {
+            "type": "string"
+          }
+        },
+        "description": "API-facing additional signer (snake_case keys)"
+      },
+      "ApiProposalCRMData": {
+        "type": "object",
+        "properties": {
+          "provider": {
+            "$ref": "#/components/schemas/CRMProvider"
+          },
+          "client_id": {
+            "type": "string",
+            "description": "ID of the client/contact in the CRM system"
+          },
+          "deal_id": {
+            "type": "string",
+            "description": "ID of the associated deal/opportunity in the CRM"
+          },
+          "deal_url": {
+            "type": "string",
+            "description": "URL to view the deal in the CRM system"
+          },
+          "deal_metadata": {
+            "type": "object",
+            "properties": {
+              "title": {
+                "type": "string"
+              },
+              "last_synced_at": {
+                "type": "string"
+              },
+              "last_synced_price": {
+                "type": "number"
+              }
+            },
+            "additionalProperties": false,
+            "description": "Additional metadata from the CRM integration"
+          }
+        },
+        "required": [
+          "provider",
+          "client_id"
+        ],
+        "additionalProperties": false,
+        "description": "CRM integration data in API (snake_case) format.\nProposalCRMData is the DB/internal format (camelCase); this is the API-facing format."
+      },
+      "PaymentSettings": {
+        "type": "object",
+        "properties": {
+          "enabled": {
+            "type": "boolean",
+            "description": "Whether payment collection is enabled for this proposal"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "percentage",
+              "fixed"
+            ],
+            "description": "Payment type (e.g., deposit, full)"
+          },
+          "deposit_percentage": {
+            "type": "number",
+            "description": "Deposit percentage required (0-100)"
+          },
+          "deposit_amount": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "description": "Fixed deposit amount required"
+          },
+          "frequency": {
+            "type": "string",
+            "description": "Payment frequency schedule"
+          }
+        },
+        "required": [
+          "enabled",
+          "type",
+          "deposit_percentage",
+          "deposit_amount",
+          "frequency"
+        ],
+        "additionalProperties": false,
+        "description": "Payment configuration stored in proposals.attrs.settings.payment (This mirrors IntegrationSettings.payment from settings.ts)"
+      },
+      "CRMProvider": {
+        "type": "string",
+        "enum": [
+          "pipedrive",
+          "hubspot",
+          "zoho",
+          "gohighlevel"
+        ],
+        "description": "Supported CRM integration provider"
+      },
+      "PageDesignSettings": {
+        "type": "object",
+        "properties": {
+          "backgroundColor": {
+            "type": "string",
+            "description": "Background color (CSS color value)"
+          },
+          "fontColor": {
+            "type": "string",
+            "description": "Font/text color (CSS color value)"
+          },
+          "backgroundImage": {
+            "type": "string",
+            "description": "URL of the background image"
+          },
+          "backgroundPosition": {
+            "type": "string",
+            "description": "CSS background-position value"
+          },
+          "backgroundSize": {
+            "type": "string",
+            "description": "CSS background-size value"
+          },
+          "backgroundRepeat": {
+            "type": "string",
+            "description": "CSS background-repeat value"
+          },
+          "backgroundAttachment": {
+            "type": "string",
+            "description": "CSS background-attachment value"
+          },
+          "backgroundOpacity": {
+            "type": "number",
+            "description": "Opacity of the background image (0-1)"
+          }
+        },
+        "additionalProperties": false,
+        "description": "Visual design settings for a specific page"
+      },
+      "PageChild": {
+        "anyOf": [
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "kind": {
+                "type": "string",
+                "const": "group",
+                "description": "Discriminator for PageChild union (set when part of children array)"
+              },
+              "id": {
+                "type": "string",
+                "description": "Unique group identifier"
+              },
+              "name": {
+                "type": "string",
+                "description": "Group name/title"
+              },
+              "description": {
+                "type": "string",
+                "description": "Group description text"
+              },
+              "isOptional": {
+                "type": "boolean",
+                "description": "Whether this group is optional for the client"
+              },
+              "isSelected": {
+                "type": "boolean",
+                "description": "Whether this optional group is currently selected"
+              },
+              "displayCost": {
+                "type": "string",
+                "enum": [
+                  "show_all",
+                  "hide_all",
+                  "hide_item_costs",
+                  "hide_group_cost"
+                ],
+                "description": "Whether to show the cost for this group"
+              },
+              "selectionType": {
+                "type": "string",
+                "enum": [
+                  "single",
+                  "multiple",
+                  "loose"
+                ],
+                "description": "How items within this group can be selected (single, multiple, etc.)"
+              },
+              "lineItems": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/LineItem"
+                },
+                "description": "Array of line items in this group"
+              },
+              "hideQuantities": {
+                "type": "boolean",
+                "description": "Whether to hide quantity columns"
+              },
+              "startExpanded": {
+                "type": "boolean",
+                "description": "Whether the group starts expanded in the proposal view"
+              },
+              "quantity": {
+                "$ref": "#/components/schemas/QuantityConfig"
+              },
+              "order_key": {
+                "type": "number",
+                "description": "Sort position of the group within the page"
+              },
+              "tags": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "Tags/labels applied to this group"
+              },
+              "linkedScopeId": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "description": "ID of the linked scope of work section"
+              },
+              "created_at": {
+                "type": "string",
+                "description": "When the group was created (ISO 8601 timestamp)"
+              },
+              "updated_at": {
+                "type": "string",
+                "description": "When the group was last updated (ISO 8601 timestamp)"
+              },
+              "metadata": {
+                "$ref": "#/components/schemas/Record%3Cstring%2Cunknown%3E"
+              },
+              "archived_at": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "description": "When the group was archived (ISO 8601 timestamp), or null if active"
+              },
+              "is_archived": {
+                "type": "boolean",
+                "description": "Whether the group is archived"
+              },
+              "in_library": {
+                "type": "boolean",
+                "description": "Whether this group belongs to the library (true) or a regular proposal (false/undefined)"
+              }
+            },
+            "required": [
+              "displayCost",
+              "id",
+              "isOptional",
+              "isSelected",
+              "kind",
+              "lineItems",
+              "name",
+              "selectionType"
+            ]
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "kind": {
+                "type": "string",
+                "const": "side_by_side",
+                "description": "Discriminator for PageChild union (set when part of children array)"
+              },
+              "id": {
+                "type": "string",
+                "description": "Unique identifier for the side-by-side item"
+              },
+              "name": {
+                "type": "string",
+                "description": "Display name"
+              },
+              "description": {
+                "type": "string",
+                "description": "Description text"
+              },
+              "style": {
+                "type": "string",
+                "enum": [
+                  "standard",
+                  "comparison"
+                ],
+                "description": "Layout style: 'standard' (default column cards) or 'comparison' (feature comparison grid)"
+              },
+              "selectionType": {
+                "type": "string",
+                "enum": [
+                  "multiple",
+                  "single",
+                  "loose"
+                ],
+                "description": "How options can be selected (single, multiple, etc.)"
+              },
+              "columns": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "name": {
+                      "type": "string"
+                    },
+                    "description": {
+                      "type": "string"
+                    },
+                    "price": {
+                      "type": "number"
+                    },
+                    "frequency": {
+                      "type": "string"
+                    },
+                    "isSelected": {
+                      "type": "boolean"
+                    },
+                    "includedFeatures": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      },
+                      "description": "Feature IDs included in this column (only used when style === 'comparison')"
+                    },
+                    "featureValues": {
+                      "$ref": "#/components/schemas/Record%3Cstring%2Cstring%3E",
+                      "description": "Per-feature text overrides keyed by feature ID (renders text instead of check/X)"
+                    },
+                    "feeType": {
+                      "type": "string",
+                      "enum": [
+                        "fixed",
+                        "text",
+                        "none"
+                      ],
+                      "description": "Fee type: 'fixed' shows price, 'text' shows text override, 'none' hides price"
+                    },
+                    "priceTextOverride": {
+                      "type": "string",
+                      "description": "Text to display instead of price when feeType is 'text'"
+                    },
+                    "quantity": {
+                      "type": "object",
+                      "properties": {
+                        "min": {
+                          "type": "number"
+                        },
+                        "max": {
+                          "type": "number"
+                        },
+                        "editableByRecipient": {
+                          "type": "boolean"
+                        },
+                        "current": {
+                          "type": "number"
+                        },
+                        "unitLabel": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "min",
+                        "max",
+                        "editableByRecipient"
+                      ],
+                      "additionalProperties": false,
+                      "description": "Quantity configuration for this column"
+                    },
+                    "design": {
+                      "type": "object",
+                      "properties": {
+                        "background": {
+                          "type": "string"
+                        },
+                        "borderWidth": {
+                          "type": "number"
+                        },
+                        "borderColor": {
+                          "type": "string"
+                        },
+                        "borderRadius": {
+                          "type": "number"
+                        },
+                        "buttonColor": {
+                          "type": "string"
+                        },
+                        "buttonTextColor": {
+                          "type": "string"
+                        },
+                        "titleColor": {
+                          "type": "string"
+                        },
+                        "priceColor": {
+                          "type": "string"
+                        },
+                        "checkmarkColor": {
+                          "type": "string"
+                        },
+                        "fontColor": {
+                          "type": "string"
+                        },
+                        "quantityBackgroundColor": {
+                          "type": "string"
+                        },
+                        "quantityFontColor": {
+                          "type": "string"
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "name",
+                    "description",
+                    "price",
+                    "frequency"
+                  ],
+                  "additionalProperties": false
+                },
+                "description": "Array of comparison columns"
+              },
+              "features": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/SideBySideFeature"
+                },
+                "description": "Shared feature list (only used when style === 'comparison')"
+              },
+              "order_key": {
+                "type": "number",
+                "description": "Sort position"
+              },
+              "containerDesign": {
+                "type": "object",
+                "properties": {
+                  "background": {
+                    "type": "string"
+                  },
+                  "fontColor": {
+                    "type": "string"
+                  },
+                  "showHeader": {
+                    "type": "boolean"
+                  },
+                  "sizeModifier": {
+                    "type": "string",
+                    "enum": [
+                      "compact",
+                      "default",
+                      "wide"
+                    ]
+                  },
+                  "borderColor": {
+                    "type": "string"
+                  },
+                  "borderWidth": {
+                    "type": "number"
+                  },
+                  "selectionOutlineColor": {
+                    "type": "string"
+                  }
+                },
+                "additionalProperties": false,
+                "description": "Visual design settings for the container"
+              },
+              "featuresColumnDesign": {
+                "type": "object",
+                "properties": {
+                  "background": {
+                    "type": "string"
+                  },
+                  "fontColor": {
+                    "type": "string"
+                  },
+                  "borderColor": {
+                    "type": "string"
+                  },
+                  "borderWidth": {
+                    "type": "number"
+                  },
+                  "borderRadius": {
+                    "type": "number"
+                  }
+                },
+                "additionalProperties": false,
+                "description": "Design settings for the features column (only used when style === 'comparison')"
+              },
+              "headingDesign": {
+                "type": "object",
+                "properties": {
+                  "background": {
+                    "type": "string"
+                  },
+                  "fontColor": {
+                    "type": "string"
+                  },
+                  "alignment": {
+                    "type": "string",
+                    "enum": [
+                      "center",
+                      "left",
+                      "right"
+                    ]
+                  }
+                },
+                "additionalProperties": false,
+                "description": "Design settings for headings (only used when style === 'comparison')"
+              },
+              "syncQuantitiesAcrossColumns": {
+                "type": "boolean",
+                "description": "Whether to sync quantities across all columns"
+              },
+              "taxExempt": {
+                "type": "boolean",
+                "description": "Whether this side-by-side is exempt from sales tax"
+              },
+              "markupExempt": {
+                "type": "boolean",
+                "description": "Whether this side-by-side is exempt from scope-level markup"
+              },
+              "discountExempt": {
+                "type": "boolean",
+                "description": "Whether this side-by-side is exempt from proposal-wide percentage discounts"
+              },
+              "linkedLibraryItemId": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "description": "Public ID of the library side-by-side this is linked to (templates only — never set on regular proposals)"
+              },
+              "hasLinkedItems": {
+                "type": "boolean",
+                "description": "Whether this library side-by-side has other items linked to it (library items only)"
+              }
+            },
+            "required": [
+              "columns",
+              "id",
+              "kind",
+              "name"
+            ]
+          }
+        ],
+        "description": "Discriminated union for page children (groups and side-by-sides). Both share order_key from the same namespace for interleaved ordering."
+      },
+      "LineItem": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Unique line item identifier"
+          },
+          "name": {
+            "type": "string",
+            "description": "Line item name/title"
+          },
+          "description": {
+            "type": "string",
+            "description": "HTML content for the item description"
+          },
+          "price": {
+            "$ref": "#/components/schemas/PriceConfig"
+          },
+          "isOptional": {
+            "type": "boolean",
+            "description": "Whether this line item is optional for the client"
+          },
+          "isSelected": {
+            "type": "boolean",
+            "description": "Whether this optional item is currently selected"
+          },
+          "taxExempt": {
+            "type": "boolean",
+            "description": "Whether this item is exempt from sales tax"
+          },
+          "markupExempt": {
+            "type": "boolean",
+            "description": "Whether this item is exempt from markup"
+          },
+          "discountExempt": {
+            "type": "boolean",
+            "description": "Whether this item is exempt from proposal-wide percentage discounts"
+          },
+          "hidden": {
+            "type": "boolean",
+            "description": "Whether this item is hidden from the client view"
+          },
+          "hideModifications": {
+            "type": "boolean",
+            "description": "Whether to hide modifications/options for this item"
+          },
+          "internalNotes": {
+            "type": "string",
+            "description": "Private notes visible only to the proposal creator (not shown to clients)"
+          },
+          "modificationsLabel": {
+            "type": "string",
+            "description": "Custom label for the modifications section (e.g., \"Options\", \"Add-ons\")"
+          },
+          "children": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Modification"
+            },
+            "description": "Array of child modifications/options for this line item"
+          },
+          "startExpanded": {
+            "type": "boolean",
+            "description": "Whether modifications are expanded by default"
+          },
+          "order_key": {
+            "type": "number",
+            "description": "Sort position within the group"
+          },
+          "selectionType": {
+            "type": "string",
+            "enum": [
+              "single",
+              "multiple",
+              "loose"
+            ],
+            "description": "How child modifications can be selected (single, multiple, etc.)"
+          },
+          "label": {
+            "type": "string",
+            "description": "Custom display label for this line item"
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Tags/labels applied to this item"
+          },
+          "integrations": {
+            "type": "object",
+            "properties": {
+              "quickbooks": {
+                "type": "object",
+                "properties": {
+                  "productId": {
+                    "type": "string"
+                  }
+                },
+                "additionalProperties": false
+              }
+            },
+            "additionalProperties": false,
+            "description": "External integration references for this item"
+          },
+          "created_at": {
+            "type": "string",
+            "description": "When the item was created (ISO 8601 timestamp)"
+          },
+          "updated_at": {
+            "type": "string",
+            "description": "When the item was last updated (ISO 8601 timestamp)"
+          },
+          "archived_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "When the item was archived (ISO 8601 timestamp), or null if active"
+          },
+          "is_archived": {
+            "type": "boolean",
+            "description": "Whether the item is archived"
+          },
+          "childCount": {
+            "type": "number",
+            "description": "Number of child modifications"
+          },
+          "parent_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "The public_id of the parent group or scope that this item belongs to"
+          },
+          "in_library": {
+            "type": "boolean",
+            "description": "Whether this item belongs to the library (true) or a regular proposal (false/undefined)"
+          },
+          "linkedLibraryItemId": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Public ID of the library item this is linked to (templates only)"
+          },
+          "hasLinkedItems": {
+            "type": "boolean",
+            "description": "Whether this library item has other items linked to it (library items only)"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "description",
+          "price",
+          "isOptional",
+          "isSelected",
+          "taxExempt",
+          "markupExempt",
+          "discountExempt",
+          "children"
+        ],
+        "additionalProperties": false,
+        "description": "A line item (product or service) within a group"
+      },
+      "QuantityConfig": {
+        "type": "object",
+        "properties": {
+          "min": {
+            "type": "number",
+            "description": "Minimum quantity allowed"
+          },
+          "max": {
+            "type": "number",
+            "description": "Maximum quantity allowed"
+          },
+          "editableByRecipient": {
+            "type": "boolean",
+            "description": "Whether the recipient can edit the quantity"
+          },
+          "current": {
+            "type": "number",
+            "description": "Current quantity value"
+          },
+          "unitLabel": {
+            "type": "string",
+            "description": "Custom label for the unit (e.g., \"hours\", \"items\")"
+          }
+        },
+        "required": [
+          "min",
+          "max",
+          "editableByRecipient"
+        ],
+        "additionalProperties": false,
+        "description": "Configuration for item quantity settings"
+      },
+      "SideBySideFeature": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Unique identifier for this feature"
+          },
+          "name": {
+            "type": "string",
+            "description": "Display name of the feature"
+          },
+          "order_key": {
+            "type": "number",
+            "description": "Sort position"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "feature",
+              "heading"
+            ],
+            "description": "Type of row: 'feature' (default) or 'heading'"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "order_key"
+        ],
+        "additionalProperties": false,
+        "description": "A feature row used in comparison-style side-by-side items"
+      },
+      "PriceConfig": {
+        "description": "Price configuration - discriminated union of pricing models\nThe 'model' field determines which configuration type is used",
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/FixedPriceConfig"
+          },
+          {
+            "$ref": "#/components/schemas/PercentPriceConfig"
+          },
+          {
+            "$ref": "#/components/schemas/TextPriceConfig"
+          },
+          {
+            "$ref": "#/components/schemas/NonePriceConfig"
+          },
+          {
+            "$ref": "#/components/schemas/HourlyPriceConfig"
+          }
+        ],
+        "discriminator": {
+          "propertyName": "model",
+          "mapping": {
+            "fixed": "#/components/schemas/FixedPriceConfig",
+            "percent": "#/components/schemas/PercentPriceConfig",
+            "text": "#/components/schemas/TextPriceConfig",
+            "none": "#/components/schemas/NonePriceConfig"
+          }
+        }
+      },
+      "Modification": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Unique identifier for the modification"
+          },
+          "name": {
+            "type": "string",
+            "description": "Name of the modification"
+          },
+          "description": {
+            "type": "string",
+            "description": "HTML description of the modification"
+          },
+          "price": {
+            "$ref": "#/components/schemas/PriceConfig",
+            "description": "Price configuration"
+          },
+          "isOptional": {
+            "type": "boolean",
+            "description": "Whether this modification is optional"
+          },
+          "isSelected": {
+            "type": "boolean",
+            "description": "Whether this modification is currently selected"
+          },
+          "taxExempt": {
+            "type": "boolean",
+            "description": "Whether this modification is exempt from tax calculations"
+          },
+          "markupExempt": {
+            "type": "boolean",
+            "description": "Whether this modification is exempt from markup calculations"
+          },
+          "discountExempt": {
+            "type": "boolean",
+            "description": "Whether this modification is exempt from percentage-based scope discounts"
+          },
+          "label": {
+            "type": "string",
+            "description": "Custom label for the modification"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "mod",
+              "mod_divider"
+            ],
+            "description": "Item kind - 'mod' for regular modifications, 'mod_divider' for dividers"
+          },
+          "selectionType": {
+            "type": "string",
+            "enum": [
+              "single",
+              "multiple",
+              "loose"
+            ],
+            "description": "Selection type for dividers - affects modifications below the divider"
+          },
+          "integrations": {
+            "type": "object",
+            "properties": {
+              "quickbooks": {
+                "type": "object",
+                "properties": {
+                  "productId": {
+                    "type": "string"
+                  }
+                },
+                "additionalProperties": false
+              }
+            },
+            "additionalProperties": false,
+            "description": "Integration-specific data"
+          },
+          "created_at": {
+            "type": "string",
+            "description": "When the modification was created (ISO 8601 timestamp)"
+          },
+          "updated_at": {
+            "type": "string",
+            "description": "When the modification was last updated (ISO 8601 timestamp)"
+          },
+          "archived_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "When the modification was archived (ISO 8601 timestamp), or null if active"
+          },
+          "is_archived": {
+            "type": "boolean",
+            "description": "Whether this modification is archived"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "price",
+          "isOptional",
+          "isSelected",
+          "taxExempt",
+          "markupExempt",
+          "discountExempt"
+        ],
+        "additionalProperties": false,
+        "description": "A modification (child item) of a line item - represents an option or variant"
+      },
+      "FixedPriceConfig": {
+        "type": "object",
+        "properties": {
+          "value": {
+            "type": "number",
+            "description": "Price value - required for fixed/percent models. For fixed: amount in cents. For percent: decimal (e.g., 0.15 for 15%)"
+          },
+          "maxValue": {
+            "type": "number",
+            "description": "Maximum price value for range pricing"
+          },
+          "isRange": {
+            "type": "boolean",
+            "description": "Whether this represents a price range"
+          },
+          "quantity": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/QuantityConfig"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Quantity configuration"
+          },
+          "discount": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/LineItemDiscountConfig"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Discount configuration"
+          },
+          "model": {
+            "type": "string",
+            "const": "fixed",
+            "description": "Pricing model type - must be \"fixed\""
+          },
+          "frequency": {
+            "$ref": "#/components/schemas/Frequency",
+            "description": "Billing frequency"
+          }
+        },
+        "required": [
+          "model",
+          "frequency"
+        ],
+        "additionalProperties": false,
+        "description": "Fixed price configuration - item has a fixed price per unit"
+      },
+      "PercentPriceConfig": {
+        "type": "object",
+        "properties": {
+          "value": {
+            "type": "number",
+            "description": "Price value - required for fixed/percent models. For fixed: amount in cents. For percent: decimal (e.g., 0.15 for 15%)"
+          },
+          "maxValue": {
+            "type": "number",
+            "description": "Maximum price value for range pricing"
+          },
+          "isRange": {
+            "type": "boolean",
+            "description": "Whether this represents a price range"
+          },
+          "quantity": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/QuantityConfig"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Quantity configuration"
+          },
+          "discount": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/LineItemDiscountConfig"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Discount configuration"
+          },
+          "model": {
+            "type": "string",
+            "const": "percent",
+            "description": "Pricing model type - must be \"percent\""
+          },
+          "frequency": {
+            "$ref": "#/components/schemas/Frequency",
+            "description": "Billing frequency"
+          },
+          "percentageApplyTo": {
+            "type": "string",
+            "enum": [
+              "line",
+              "group",
+              "scope"
+            ],
+            "description": "What the percentage applies to: 'line' (parent line item), 'group' (parent group total), or 'scope' (proposal total)"
+          }
+        },
+        "required": [
+          "model",
+          "frequency"
+        ],
+        "additionalProperties": false,
+        "description": "Percentage-based price configuration - item price is a percentage of another value"
+      },
+      "TextPriceConfig": {
+        "type": "object",
+        "properties": {
+          "value": {
+            "type": "number",
+            "description": "Price value - required for fixed/percent models. For fixed: amount in cents. For percent: decimal (e.g., 0.15 for 15%)"
+          },
+          "maxValue": {
+            "type": "number",
+            "description": "Maximum price value for range pricing"
+          },
+          "isRange": {
+            "type": "boolean",
+            "description": "Whether this represents a price range"
+          },
+          "quantity": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/QuantityConfig"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Quantity configuration"
+          },
+          "discount": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/LineItemDiscountConfig"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Discount configuration"
+          },
+          "model": {
+            "type": "string",
+            "const": "text",
+            "description": "Pricing model type - must be \"text\""
+          },
+          "frequency": {
+            "$ref": "#/components/schemas/Frequency",
+            "description": "Billing frequency"
+          }
+        },
+        "required": [
+          "model",
+          "frequency"
+        ],
+        "additionalProperties": false,
+        "description": "Text-based price configuration - price is entered as text (e.g., \"Contact for pricing\")"
+      },
+      "NonePriceConfig": {
+        "type": "object",
+        "properties": {
+          "value": {
+            "type": "number",
+            "description": "Price value - required for fixed/percent models. For fixed: amount in cents. For percent: decimal (e.g., 0.15 for 15%)"
+          },
+          "maxValue": {
+            "type": "number",
+            "description": "Maximum price value for range pricing"
+          },
+          "isRange": {
+            "type": "boolean",
+            "description": "Whether this represents a price range"
+          },
+          "quantity": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/QuantityConfig"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Quantity configuration"
+          },
+          "discount": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/LineItemDiscountConfig"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Discount configuration"
+          },
+          "model": {
+            "type": "string",
+            "const": "none",
+            "description": "Pricing model type - must be \"none\""
+          }
+        },
+        "required": [
+          "model"
+        ],
+        "additionalProperties": false,
+        "description": "No price configuration - item has no price"
+      },
+      "HourlyPriceConfig": {
+        "type": "object",
+        "properties": {
+          "value": {
+            "type": "number",
+            "description": "Price value - required for fixed/percent models. For fixed: amount in cents. For percent: decimal (e.g., 0.15 for 15%)"
+          },
+          "maxValue": {
+            "type": "number",
+            "description": "Maximum price value for range pricing"
+          },
+          "isRange": {
+            "type": "boolean",
+            "description": "Whether this represents a price range"
+          },
+          "quantity": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/QuantityConfig"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Quantity configuration"
+          },
+          "discount": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/LineItemDiscountConfig"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Discount configuration"
+          },
+          "model": {
+            "type": "string",
+            "const": "hourly",
+            "description": "Pricing model type - must be \"hourly\""
+          },
+          "frequency": {
+            "$ref": "#/components/schemas/Frequency",
+            "description": "Billing frequency"
+          },
+          "hourlyTasks": {
+            "$ref": "#/components/schemas/Record%3Cstring%2C(number%7Cstructure-385897607-4346-4375-385897607-4337-4382-385897607-4322-4383-385897607-4229-4384-385897607-3935-4473-385897607-0-6374%7Cnull)%3E",
+            "description": "Hourly tasks with their hours (single number or range)"
+          },
+          "hourlyTaskUseRanges": {
+            "type": "boolean",
+            "description": "Whether hourly tasks use ranges"
+          }
+        },
+        "required": [
+          "model",
+          "frequency"
+        ],
+        "additionalProperties": false,
+        "description": "Hourly price configuration - item price is calculated from hourly tasks"
+      },
+      "LineItemDiscountConfig": {
+        "type": "object",
+        "properties": {
+          "added": {
+            "type": "boolean",
+            "description": "Whether the discount has been added"
+          },
+          "isSelected": {
+            "type": "boolean",
+            "description": "Whether the discount is currently selected/applied"
+          },
+          "scope": {
+            "type": "string",
+            "enum": [
+              "unit",
+              "line",
+              "group",
+              "scope"
+            ],
+            "description": "Scope of the discount: 'unit' (per unit), 'line' (entire line), 'group' (entire group), or 'scope' (entire pricing table)"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "percentage",
+              "fixed"
+            ],
+            "description": "Discount type: 'percentage' or 'fixed' amount"
+          },
+          "amount": {
+            "type": "number",
+            "description": "Discount amount - percentage as decimal (e.g., 0.10 for 10%) or fixed amount in cents"
+          }
+        },
+        "additionalProperties": {},
+        "description": "Configuration for discounts applied to line items"
+      },
+      "Frequency": {
+        "type": "string",
+        "enum": [
+          "once",
+          "monthly",
+          "quarterly",
+          "annually",
+          "weekly",
+          "biweekly",
+          "semi-monthly",
+          "semi-annually"
+        ],
+        "examples": [
+          "monthly"
+        ],
+        "description": "Billing frequency for recurring items"
+      },
+      "ProposalDisplayStatus": {
+        "type": "string",
+        "enum": [
+          "DRAFT",
+          "SENT",
+          "PENDING",
+          "CANCELLED",
+          "WON",
+          "LOST",
+          "EXPIRED"
+        ],
+        "description": "Proposal status"
+      },
+      "ProposalUser": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Public user ID"
+          },
+          "name": {
+            "type": "string",
+            "description": "Full name"
+          },
+          "email": {
+            "type": "string",
+            "description": "Email address"
+          },
+          "avatar_url": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Avatar image URL"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "email"
+        ],
+        "additionalProperties": false,
+        "description": "User profile embedded in proposal responses (used for both created_by and updated_by)"
+      },
+      "ProposalCachedTotals": {
+        "type": "object",
+        "properties": {
+          "currency": {
+            "type": "string",
+            "description": "Currency code for the cached totals (e.g. \"USD\")"
+          },
+          "updated_at": {
+            "type": "string",
+            "description": "ISO 8601 timestamp when the cached totals were last recalculated"
+          },
+          "once": {
+            "$ref": "#/components/schemas/ProposalCachedTotalRange",
+            "description": "One-time pricing total range"
+          },
+          "monthly": {
+            "$ref": "#/components/schemas/ProposalCachedTotalRange",
+            "description": "Monthly recurring pricing total range"
+          },
+          "quarterly": {
+            "$ref": "#/components/schemas/ProposalCachedTotalRange",
+            "description": "Quarterly recurring pricing total range"
+          },
+          "annually": {
+            "$ref": "#/components/schemas/ProposalCachedTotalRange",
+            "description": "Annually recurring pricing total range"
+          }
+        },
+        "additionalProperties": {
+          "anyOf": [
+            {
+              "$ref": "#/components/schemas/ProposalCachedTotalRange"
+            },
+            {
+              "type": "string"
+            },
+            {
+              "not": {}
+            }
+          ]
+        },
+        "description": "Cached pricing totals for the proposal"
+      },
+      "ProposalListItemStatusDetail": {
+        "type": "object",
+        "properties": {
+          "marked_as_won_method": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "manual",
+              "digital_signature",
+              "acceptance",
+              null
+            ],
+            "description": "Method used to mark the proposal as won"
+          }
+        },
+        "additionalProperties": false,
+        "description": "Subset of status details relevant to list views"
+      },
+      "ProposalCachedTotalRange": {
+        "type": "object",
+        "properties": {
+          "min": {
+            "type": "number",
+            "description": "Minimum total amount"
+          },
+          "max": {
+            "type": "number",
+            "description": "Maximum total amount"
+          }
+        },
+        "required": [
+          "min",
+          "max"
+        ],
+        "additionalProperties": false,
+        "description": "A price range with minimum and maximum values"
+      },
+      "ProposalStatusDetail": {
+        "type": "object",
+        "properties": {
+          "acceptance": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ProposalAcceptance"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Details of the proposal acceptance, if accepted via accept button"
+          },
+          "cancellation_note": {
+            "type": "string",
+            "description": "Note explaining why the proposal was cancelled"
+          },
+          "closed_proposal_note": {
+            "type": "string",
+            "description": "Note displayed when the proposal is closed (won/lost)"
+          },
+          "marked_as_won_method": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "manual",
+              "digital_signature",
+              "acceptance",
+              null
+            ],
+            "description": "Method used to mark the proposal as won"
+          },
+          "signature_events": {
+            "anyOf": [
+              {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string"
+                    },
+                    "timestamp": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "type",
+                    "timestamp"
+                  ],
+                  "additionalProperties": {}
+                }
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Chronological log of signature-related events"
+          },
+          "signatures": {
+            "anyOf": [
+              {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/Record%3Cstring%2Cunknown%3E"
+                }
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Collected digital signatures on the proposal"
+          },
+          "signed_pdf_url": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "URL of the signed PDF document, if available"
+          }
+        },
+        "additionalProperties": false,
+        "description": "Status lifecycle and resolution details for a proposal"
+      },
+      "ProposalAcceptance": {
+        "type": "object",
+        "properties": {
+          "full_name": {
+            "type": "string"
+          },
+          "ip_address": {
+            "type": "string"
+          },
+          "accepted_at": {
+            "type": "string"
+          },
+          "user_agent": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "full_name",
+          "ip_address",
+          "accepted_at"
+        ],
+        "additionalProperties": false,
+        "description": "Acceptance details when a proposal is accepted via the accept button"
+      },
+      "ProposalIntegrations": {
+        "type": "object",
+        "properties": {
+          "crm": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ApiProposalCRMData"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "CRM integration data (deal link, provider, metadata)"
+          },
+          "payment": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ProposalPaymentData"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Payment processing configuration and transaction history"
+          }
+        },
+        "additionalProperties": false,
+        "description": "External integration data bundled on a proposal (CRM, payment, etc.)"
+      },
+      "ProposalPage": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Unique page identifier"
+          },
+          "created_at": {
+            "type": "string",
+            "description": "When the page was created (ISO 8601 timestamp)"
+          },
+          "updated_at": {
+            "type": "string",
+            "description": "When the page was last updated (ISO 8601 timestamp)"
+          },
+          "name": {
+            "type": "string",
+            "description": "Page name/title"
+          },
+          "content": {
+            "type": "string",
+            "description": "Rich text content of the page"
+          },
+          "order_key": {
+            "type": "number",
+            "description": "Sort position of the page within the proposal"
+          },
+          "kind": {
+            "type": "string",
+            "description": "Type of page (e.g., content, pricing, signatures)"
+          },
+          "scopeId": {
+            "type": "string",
+            "description": "ID of the scope of work section this page belongs to"
+          },
+          "isScopeOfWork": {
+            "type": "boolean",
+            "description": "Whether this page is a scope of work pricing page"
+          },
+          "isSignaturesPage": {
+            "type": "boolean",
+            "description": "Whether this is the signatures page"
+          },
+          "screenshotUrl": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "URL of the page screenshot thumbnail"
+          },
+          "showCents": {
+            "type": "boolean",
+            "description": "Whether to display cents in price values"
+          },
+          "salesTaxPercentage": {
+            "type": "string",
+            "description": "Sales tax percentage applied to this page"
+          },
+          "lineItemsStartExpanded": {
+            "type": "string",
+            "enum": [
+              "none",
+              "all",
+              "first"
+            ],
+            "description": "Whether line items are expanded by default"
+          },
+          "selectionType": {
+            "type": "string",
+            "enum": [
+              "single",
+              "multiple",
+              "loose"
+            ],
+            "description": "How items on this page can be selected"
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Tags/labels applied to this page"
+          },
+          "metadata": {
+            "$ref": "#/components/schemas/Record%3Cstring%2Cunknown%3E"
+          },
+          "markupPercentage": {
+            "type": "string",
+            "description": "Markup percentage applied to items on this page"
+          },
+          "discounts": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "type": {
+                  "type": "string",
+                  "enum": [
+                    "fixed",
+                    "percentage"
+                  ]
+                },
+                "amount": {
+                  "type": "string"
+                },
+                "frequency": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "id",
+                "type",
+                "amount",
+                "frequency"
+              ],
+              "additionalProperties": false
+            },
+            "description": "Discount configurations for this page"
+          },
+          "hideTotalsTop": {
+            "type": "boolean",
+            "description": "Whether to hide the totals row at the top of the page"
+          },
+          "hideTotalsBottom": {
+            "type": "boolean",
+            "description": "Whether to hide the totals row at the bottom of the page"
+          },
+          "labels": {
+            "type": "object",
+            "properties": {
+              "grandTotalLabels": {
+                "$ref": "#/components/schemas/Record%3Cstring%2Cstring%3E"
+              },
+              "tax": {
+                "type": "string"
+              }
+            },
+            "additionalProperties": false,
+            "description": "Custom label overrides for this page"
+          },
+          "displayHeading": {
+            "type": "boolean",
+            "description": "Whether to display the page heading"
+          },
+          "hideSection": {
+            "type": "boolean",
+            "description": "Whether this section is hidden from view"
+          },
+          "excludeFromPdf": {
+            "type": "boolean",
+            "description": "Whether to exclude this page from PDF exports"
+          },
+          "designSettings": {
+            "$ref": "#/components/schemas/PageDesignSettings"
+          },
+          "children": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PageChild"
+            },
+            "description": "Unified ordered list of groups and side-by-sides (only on scope-of-work pages)"
+          }
+        },
+        "required": [
+          "name",
+          "content",
+          "order_key"
+        ],
+        "description": "A page within a proposal. Pages contain the content sections of a proposal."
+      },
+      "V1SigningData": {
+        "type": "object",
+        "properties": {
+          "document_hash": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "signers": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/V1SignerStatus"
+            }
+          },
+          "last_synced_at": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "additionalProperties": false,
+        "description": "Signing data from a v1 legacy proposal managed by Xodo Sign"
+      },
+      "V1SignerStatus": {
+        "type": "object",
+        "properties": {
+          "role": {
+            "type": "string",
+            "enum": [
+              "company",
+              "client"
+            ]
+          },
+          "name": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "completed",
+              "forwarded",
+              "bounced",
+              "declined",
+              "removed"
+            ]
+          },
+          "timestamp": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "forwarded": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "role",
+          "name",
+          "email",
+          "status"
+        ],
+        "additionalProperties": false,
+        "description": "Status of a signer in the v1 Xodo Sign system"
+      },
+      "ProposalPaymentData": {
+        "type": "object",
+        "properties": {
+          "settings": {
+            "$ref": "#/components/schemas/PaymentSettings",
+            "description": "Payment processing configuration"
+          },
+          "transactions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProposalPayment"
+            },
+            "description": "Collected payment transactions"
+          }
+        },
+        "required": [
+          "settings",
+          "transactions"
+        ],
+        "additionalProperties": false,
+        "description": "Combined payment data on a proposal: configuration + transaction history. Analogous to ProposalCRMData for CRM integration."
+      },
+      "ProposalPayment": {
+        "type": "object",
+        "properties": {
+          "amount": {
+            "type": "number",
+            "description": "Payment amount collected"
+          },
+          "currency": {
+            "type": "string",
+            "description": "Currency code for the payment"
+          },
+          "percentage": {
+            "type": "number",
+            "description": "Percentage of the proposal total this payment represents"
+          },
+          "processor": {
+            "type": "string",
+            "const": "stripe",
+            "description": "Payment processor used (e.g., stripe)"
+          },
+          "processor_payment_id": {
+            "type": "string",
+            "description": "Payment ID from the payment processor"
+          },
+          "status": {
+            "$ref": "#/components/schemas/PaymentStatus"
+          },
+          "payment_type": {
+            "$ref": "#/components/schemas/PaymentType"
+          },
+          "paid_at": {
+            "type": "string",
+            "description": "When the payment was completed (ISO 8601 timestamp)"
+          },
+          "processor_session_id": {
+            "type": "string",
+            "description": "Checkout session ID from the payment processor"
+          },
+          "payer_email": {
+            "type": "string",
+            "description": "Email address of the person who made the payment"
+          },
+          "payer_name": {
+            "type": "string",
+            "description": "Name of the person who made the payment"
+          },
+          "metadata": {
+            "type": "object",
+            "properties": {
+              "share_token": {
+                "type": "string"
+              },
+              "share_link_created_at": {
+                "type": "string",
+                "description": "When the share link was generated (ISO 8601 timestamp)"
+              },
+              "email_sent_to": {
+                "type": "string"
+              },
+              "email_sent_at": {
+                "type": "string",
+                "description": "When the email was sent (ISO 8601 timestamp)"
+              },
+              "created_by_signer": {
+                "type": "boolean"
+              }
+            },
+            "additionalProperties": false,
+            "description": "Additional payment metadata"
+          },
+          "created_at": {
+            "type": "string",
+            "description": "When the payment record was created (ISO 8601 timestamp)"
+          },
+          "updated_at": {
+            "type": "string",
+            "description": "When the payment record was last updated (ISO 8601 timestamp)"
+          }
+        },
+        "required": [
+          "amount",
+          "currency",
+          "percentage",
+          "processor",
+          "status",
+          "payment_type",
+          "created_at",
+          "updated_at"
+        ],
+        "additionalProperties": false,
+        "description": "Individual payment record stored in proposals.attrs.payments[]"
+      },
+      "PaymentStatus": {
+        "type": "string",
+        "enum": [
+          "pending",
+          "processing",
+          "succeeded",
+          "failed",
+          "canceled"
+        ],
+        "description": "Payment status values"
+      },
+      "PaymentType": {
+        "type": "string",
+        "enum": [
+          "deposit",
+          "final",
+          "installment"
+        ],
+        "description": "Payment type values (for future multi-payment support)"
+      }
+    },
+    "responses": {
+      "UnauthorizedError": {
+        "description": "Authentication required",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "error"
+              ],
+              "properties": {
+                "error": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "message"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "enum": [
+                        "UNAUTHORIZED"
+                      ],
+                      "description": "Machine-readable error code"
+                    },
+                    "message": {
+                      "type": "string",
+                      "description": "Human-readable error message"
+                    },
+                    "details": {
+                      "type": "object",
+                      "description": "Additional error details"
+                    }
+                  }
+                }
+              }
+            },
+            "example": {
+              "error": {
+                "code": "UNAUTHORIZED",
+                "message": "Authentication required"
+              }
+            }
+          }
+        }
+      },
+      "ForbiddenError": {
+        "description": "Insufficient permissions",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "error"
+              ],
+              "properties": {
+                "error": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "message"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "enum": [
+                        "FORBIDDEN"
+                      ],
+                      "description": "Machine-readable error code"
+                    },
+                    "message": {
+                      "type": "string",
+                      "description": "Human-readable error message"
+                    },
+                    "details": {
+                      "type": "object",
+                      "description": "Additional error details"
+                    }
+                  }
+                }
+              }
+            },
+            "example": {
+              "error": {
+                "code": "FORBIDDEN",
+                "message": "Insufficient permissions"
+              }
+            }
+          }
+        }
+      },
+      "ValidationError": {
+        "description": "Validation error",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "error"
+              ],
+              "properties": {
+                "error": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "message"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "enum": [
+                        "VALIDATION_ERROR"
+                      ],
+                      "description": "Machine-readable error code"
+                    },
+                    "message": {
+                      "type": "string",
+                      "description": "Human-readable error message"
+                    },
+                    "details": {
+                      "type": "object",
+                      "description": "Validation error details"
+                    }
+                  }
+                }
+              }
+            },
+            "example": {
+              "error": {
+                "code": "VALIDATION_ERROR",
+                "message": "Invalid input data",
+                "details": {
+                  "name": "Name is required"
+                }
+              }
+            }
+          }
+        }
+      },
+      "InternalServerError": {
+        "description": "Internal server error",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "error"
+              ],
+              "properties": {
+                "error": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "message"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "enum": [
+                        "INTERNAL_ERROR"
+                      ],
+                      "description": "Machine-readable error code"
+                    },
+                    "message": {
+                      "type": "string",
+                      "description": "Human-readable error message"
+                    },
+                    "details": {
+                      "type": "object",
+                      "description": "Additional error details"
+                    }
+                  }
+                }
+              }
+            },
+            "example": {
+              "error": {
+                "code": "INTERNAL_ERROR",
+                "message": "An unexpected error occurred"
+              }
+            }
+          }
+        }
+      },
+      "NotFoundOrNotAuthorizedError": {
+        "description": "Not Found - Resource does not exist or access denied",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "error"
+              ],
+              "properties": {
+                "error": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "message"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "enum": [
+                        "NOT_FOUND"
+                      ],
+                      "description": "Machine-readable error code"
+                    },
+                    "message": {
+                      "type": "string",
+                      "description": "Human-readable error message"
+                    },
+                    "details": {
+                      "type": "object",
+                      "description": "Additional error details"
+                    }
+                  }
+                }
+              }
+            },
+            "example": {
+              "error": {
+                "code": "NOT_FOUND",
+                "message": "Not Authorized or Not Found: Resource {id}"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "security": [
+    {
+      "BearerAuth": []
+    },
+    {
+      "ApiKeyAuth": []
+    }
+  ],
+  "paths": {
+    "/api/proposals/{id}/analytics": {
+      "get": {
+        "operationId": "GetProposalAnalytics",
+        "summary": "Get analytics events for a proposal",
+        "description": "Retrieve analytics events for a specific proposal. Requires authentication and org access.",
+        "tags": [
+          "Proposals"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Proposal ID",
+            "example": "zw5FD5HGcfE3"
+          },
+          {
+            "in": "query",
+            "name": "event_type",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "proposal_viewed",
+                "proposal_sent",
+                "status_changed",
+                "proposal_signed",
+                "pdf_viewed",
+                "signature_request_sent"
+              ]
+            },
+            "description": "Filter by event type"
+          },
+          {
+            "in": "query",
+            "name": "start_date",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "description": "Filter events from this date onwards"
+          },
+          {
+            "in": "query",
+            "name": "end_date",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "description": "Filter events up to this date"
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "schema": {
+              "type": "integer",
+              "default": 50,
+              "minimum": 1,
+              "maximum": 200
+            },
+            "description": "Maximum number of events to return"
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "schema": {
+              "type": "integer",
+              "default": 0,
+              "minimum": 0
+            },
+            "description": "Number of events to skip for pagination"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Analytics events retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "event_type": {
+                            "type": "string"
+                          },
+                          "event_timestamp": {
+                            "type": "string",
+                            "format": "date-time"
+                          },
+                          "user": {
+                            "type": "object",
+                            "nullable": true,
+                            "properties": {
+                              "public_id": {
+                                "type": "string"
+                              },
+                              "email": {
+                                "type": "string"
+                              },
+                              "full_name": {
+                                "type": "string",
+                                "nullable": true
+                              }
+                            }
+                          },
+                          "metadata": {
+                            "type": "object"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      }
+    },
+    "/api/proposals/{id}/archive": {
+      "post": {
+        "operationId": "ArchiveProposal",
+        "summary": "Archive a proposal",
+        "description": "Archive a proposal by setting its archived_at timestamp. Archived proposals are excluded from default listings and become read-only.",
+        "tags": [
+          "Proposals"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Proposal ID",
+            "example": "zw5FD5HGcfE3"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Proposal archived successfully"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "description": "Not authorized to archive this proposal",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "example": "Not authorized to archive this proposal"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Proposal not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "example": "Proposal not found"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Proposal is already archived",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "example": "Proposal is already archived"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      }
+    },
+    "/api/proposals/{id}/bulk-archive": {
+      "post": {
+        "operationId": "BulkArchiveItems",
+        "summary": "Archive multiple items in a proposal",
+        "description": "Archive multiple items (line items, groups) from a proposal",
+        "tags": [
+          "Proposals"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Proposal ID",
+            "example": "zw5FD5HGcfE3"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "itemIds"
+                ],
+                "properties": {
+                  "itemIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "description": "Array of item IDs to archive",
+                    "example": [
+                      "abcdefgh1234",
+                      "ijklmnop5678"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Items archived successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "archivedCount": {
+                      "type": "integer",
+                      "description": "Number of items successfully archived",
+                      "example": 3
+                    },
+                    "message": {
+                      "type": "string",
+                      "description": "Success message",
+                      "example": "Successfully archived 3 items"
+                    },
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      },
+                      "description": "Array of error messages for failed items (only present if some items failed)"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      }
+    },
+    "/api/proposals/{id}/duplicate": {
+      "post": {
+        "operationId": "DuplicateProposal",
+        "summary": "Duplicate a proposal",
+        "description": "Create a complete copy of an existing proposal with all its groups, items, and pages",
+        "tags": [
+          "Proposals"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Proposal ID",
+            "example": "zw5FD5HGcfE3"
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "description": "Name for the duplicated proposal. Default: \"Copy of {original name}\"",
+                    "example": "Copy of Q1 2024 Proposal"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Proposal duplicated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "description": "ID of the newly created proposal"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "404": {
+            "description": "Proposal not found"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      }
+    },
+    "/api/proposals/{id}/pdf": {
+      "post": {
+        "operationId": "GenerateProposalPDF",
+        "summary": "Generate proposal PDF",
+        "description": "Generate a PDF document for the specified proposal. Returns the PDF as a binary download.",
+        "tags": [
+          "Proposals"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Proposal ID",
+            "example": "zw5FD5HGcfE3"
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {}
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "PDF generated successfully",
+            "content": {
+              "application/pdf": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "404": {
+            "description": "Proposal not found"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      }
+    },
+    "/api/proposals/{id}/reimport": {
+      "post": {
+        "operationId": "ReimportProposal",
+        "summary": "Replace an existing proposal's contents with a JSON file",
+        "description": "Reimports a proposal by replacing the slices the caller opts into\n(pricing data, page content, design settings, proposal settings)\nwith the supplied JSON. CRM linkage, signatures, payments,\nstatus, and history are always preserved.\n\nThe lifecycle is gated: only DRAFT, SENT, or template proposals can\nbe reimported, and only if no signatures or successful payments are\nattached.\n",
+        "tags": [
+          "Proposals"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Proposal public ID"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "proposal"
+                ],
+                "properties": {
+                  "proposal": {
+                    "$ref": "#/components/schemas/CreateProposalInput"
+                  },
+                  "oldPagePublicIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "dryRun": {
+                    "type": "boolean"
+                  },
+                  "overwrite": {
+                    "type": "object",
+                    "description": "Per-slice overwrite flags. Each independently gates\nreplacement of one editorial slice. Omit (or send all\n`true`) for legacy \"replace everything\" behavior.\n",
+                    "properties": {
+                      "pricing": {
+                        "type": "boolean",
+                        "default": true
+                      },
+                      "pages": {
+                        "type": "boolean",
+                        "default": true
+                      },
+                      "design": {
+                        "type": "boolean",
+                        "default": true
+                      },
+                      "settings": {
+                        "type": "boolean",
+                        "default": true
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Reimported (or dry-run validation passed)"
+          },
+          "400": {
+            "description": "Validation error"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "404": {
+            "description": "Proposal not found"
+          },
+          "409": {
+            "description": "Proposal not in a reimportable state"
+          },
+          "413": {
+            "description": "Payload too large"
+          }
+        }
+      }
+    },
+    "/api/proposals/{id}": {
+      "get": {
+        "operationId": "GetProposal",
+        "summary": "Get a single proposal",
+        "description": "Retrieve detailed information about a specific proposal including all items and groups",
+        "tags": [
+          "Proposals"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Proposal ID",
+            "example": "zw5FD5HGcfE3"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Proposal retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProposalDetail"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "404": {
+            "description": "Proposal not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "example": "NOT_FOUND"
+                        },
+                        "message": {
+                          "type": "string",
+                          "example": "Proposal not found"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      },
+      "patch": {
+        "operationId": "UpdateProposal",
+        "summary": "Update a proposal",
+        "description": "Update proposal details such as name, description, or client information",
+        "tags": [
+          "Proposals"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Proposal ID",
+            "example": "zw5FD5HGcfE3"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateProposalApiInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Proposal updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProposalListItem"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "404": {
+            "description": "Proposal not found"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      },
+      "delete": {
+        "operationId": "DeleteProposal",
+        "summary": "Delete a proposal",
+        "description": "Delete a proposal and all its associated items. The proposal will no longer appear in listings.",
+        "tags": [
+          "Proposals"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Proposal ID",
+            "example": "zw5FD5HGcfE3"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Proposal deleted successfully"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundOrNotAuthorizedError"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      }
+    },
+    "/api/proposals/{id}/star": {
+      "post": {
+        "operationId": "StarProposal",
+        "summary": "Star a proposal",
+        "description": "Star a proposal for the current user. Starred proposals appear first in listings. This operation is idempotent - starring an already-starred proposal has no effect.",
+        "tags": [
+          "Proposals"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Proposal ID",
+            "example": "zw5FD5HGcfE3"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Proposal starred successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "is_starred": {
+                      "type": "boolean",
+                      "example": true
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundOrNotAuthorizedError"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      }
+    },
+    "/api/proposals/{id}/unarchive": {
+      "post": {
+        "operationId": "UnarchiveProposal",
+        "summary": "Unarchive a proposal",
+        "description": "Unarchive a proposal by clearing its archived_at timestamp. The proposal will return to active status and become editable again.",
+        "tags": [
+          "Proposals"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Proposal ID",
+            "example": "zw5FD5HGcfE3"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Proposal unarchived successfully"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "description": "Not authorized to unarchive this proposal",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "example": "Not authorized to unarchive this proposal"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Proposal not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "example": "Proposal not found"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Proposal is not archived",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "example": "Proposal is not archived"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      }
+    },
+    "/api/proposals/{id}/unstar": {
+      "post": {
+        "operationId": "UnstarProposal",
+        "summary": "Unstar a proposal",
+        "description": "Remove the star from a proposal for the current user. This operation is idempotent - unstarring a proposal that is not starred has no effect.",
+        "tags": [
+          "Proposals"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Proposal ID",
+            "example": "zw5FD5HGcfE3"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Proposal unstarred successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "is_starred": {
+                      "type": "boolean",
+                      "example": false
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundOrNotAuthorizedError"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      }
+    },
+    "/api/proposals": {
+      "get": {
+        "operationId": "ListProposals",
+        "summary": "List all proposals",
+        "description": "Retrieve a paginated list of proposals for the authenticated user's organization",
+        "tags": [
+          "Proposals"
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "page",
+            "schema": {
+              "type": "integer",
+              "default": 1,
+              "minimum": 1
+            },
+            "description": "Page number for pagination"
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "schema": {
+              "type": "integer",
+              "default": 20,
+              "minimum": 1,
+              "maximum": 100
+            },
+            "description": "Number of items per page"
+          },
+          {
+            "in": "query",
+            "name": "search",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Search term to filter proposals by name or client",
+            "example": "Website"
+          },
+          {
+            "in": "query",
+            "name": "sort",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "created_at",
+                "updated_at",
+                "name",
+                "status"
+              ],
+              "default": "created_at"
+            },
+            "description": "Field to sort by"
+          },
+          {
+            "in": "query",
+            "name": "order",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "asc",
+                "desc"
+              ],
+              "default": "desc"
+            },
+            "description": "Sort order"
+          },
+          {
+            "in": "query",
+            "name": "status",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "draft",
+                "sent",
+                "won",
+                "lost",
+                "cancelled"
+              ]
+            },
+            "description": "Filter by proposal status"
+          },
+          {
+            "in": "query",
+            "name": "created_by",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Filter by creator's public_id"
+          },
+          {
+            "in": "query",
+            "name": "archived",
+            "schema": {
+              "type": "string",
+              "enum": [
+                false,
+                true,
+                "any"
+              ],
+              "default": false
+            },
+            "description": "Filter by archive status (false=non-archived, true=archived only, any=both)",
+            "example": "false"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response with proposals list",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/ProposalListItem"
+                      }
+                    },
+                    "pagination": {
+                      "$ref": "#/components/schemas/Pagination"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      },
+      "post": {
+        "operationId": "CreateProposal",
+        "summary": "Create a new proposal",
+        "description": "Create a new proposal for the user's organization",
+        "tags": [
+          "Proposals"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateProposalApiInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Proposal created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/CreateProposalResponse"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      }
+    }
+  },
+  "tags": []
+}

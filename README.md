@@ -70,6 +70,9 @@ Key variables:
 
 - `API_BASE_URL`
 - `API_TOKEN`
+- `API_AUTH_HEADER` (optional, default: `Authorization`)
+- `API_AUTH_SCHEME` (optional, default: `Bearer`; set empty to omit scheme prefix)
+- `API_AUTH_RAW_TOKEN` (optional, default: `false`; when `true`, sends raw token value without scheme)
 - `POSTMARK_SMTP_HOST`, `POSTMARK_SMTP_PORT`, `POSTMARK_SMTP_USER`, `POSTMARK_SMTP_PASS`
 - `MAIL_FROM`, `FINANCE_TO`
 - `SIGNING_COMPLETION_MODE` (`lenient` or `strict`)

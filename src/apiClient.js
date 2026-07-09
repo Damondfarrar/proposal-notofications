@@ -1,26 +1,57 @@
 const axios = require("axios");
 
 class ApiClient {
-  constructor({ baseUrl, authToken, requestTimeoutMs = 20000 }) {
+  constructor({
+    baseUrl,
+    authToken,
+    authHeader = "Authorization",
+    authScheme = "Bearer",
+    authRawToken = false,
+    requestTimeoutMs = 20000
+  }) {
+    const tokenValue = authRawToken
+      ? authToken
+      : `${authScheme ? `${authScheme} ` : ""}${authToken}`.trim();
+
     this.http = axios.create({
       baseURL: baseUrl,
       timeout: requestTimeoutMs,
       headers: {
-        Authorization: `Bearer ${authToken}`,
+        [authHeader]: tokenValue,
         "Content-Type": "application/json"
       }
     });
+
+    this.authMeta = {
+      authHeader,
+      authScheme,
+      authRawToken
+    };
+  }
+
+  normalizeJsonPayload(payload) {
+    if (payload && typeof payload === "object") return payload;
+
+    if (typeof payload === "string") {
+      try {
+        return JSON.parse(payload);
+      } catch {
+        return {};
+      }
+    }
+
+    return {};
   }
 
   async listWonProposals({ page = 1, limit = 50 }) {
-    const response = await this.http.get("/api/proposals", {
+    const response = await this.http.get("/proposals", {
       params: {
         page,
         limit
       }
     });
 
-    const payload = response.data || {};
+    const payload = this.normalizeJsonPayload(response.data);
     const items = Array.isArray(payload.data) ? payload.data : [];
     const wonItems = items.filter(
       (item) => String(item?.status || "").toUpperCase() === "WON"
@@ -30,13 +61,13 @@ class ApiClient {
   }
 
   async getProposal(proposalId) {
-    const response = await this.http.get(`/api/proposals/${proposalId}`);
-    return response.data;
+    const response = await this.http.get(`/proposals/${proposalId}`);
+    return this.normalizeJsonPayload(response.data);
   }
 
   async patchProposalTags(proposalId, tags) {
-    const response = await this.http.patch(`/api/proposals/${proposalId}`, { tags });
-    return response.data;
+    const response = await this.http.patch(`/proposals/${proposalId}`, { tags });
+    return this.normalizeJsonPayload(response.data);
   }
 }
 

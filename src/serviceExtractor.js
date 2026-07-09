@@ -39,16 +39,30 @@ function readPrice(price = {}, options = {}) {
   const model = price?.model || "none";
   const frequency = price?.frequency || "once";
   const quantityCurrent = typeof price?.quantity?.current === "number" ? price.quantity.current : 1;
-  const quantity = quantityCurrent > 0 ? quantityCurrent : 1;
+  const quantity = quantityCurrent;
 
+  // strict selected-only, no-price rows excluded
   if (model === "none") {
     return { include: false, model, frequency, quantity };
   }
 
+  // explicitly exclude zero/negative qty (do not coerce to 1)
+  if (typeof quantity !== "number" || quantity <= 0) {
+    return { include: false, model, frequency, quantity };
+  }
+
   if (model === "fixed" || model === "hourly") {
-    const unitCents = normalizeToCents(Number(price?.value || 0), options.priceUnitMode);
+    const raw = Number(price?.value);
+    const unitCents = normalizeToCents(raw, options.priceUnitMode);
     if (unitCents === null) return { include: false, model, frequency, quantity };
-    const lineCents = unitCents * quantity;
+
+    const lineCents = Math.round(unitCents * quantity);
+
+    // exclude tiny placeholder amounts ($1.00 and below)
+    if (lineCents <= 100) {
+      return { include: false, model, frequency, quantity };
+    }
+
     return {
       include: true,
       model,
@@ -60,31 +74,7 @@ function readPrice(price = {}, options = {}) {
     };
   }
 
-  if (model === "percent") {
-    const pct = Number(price?.value || 0);
-    return {
-      include: true,
-      model,
-      frequency,
-      quantity,
-      unitAmountCents: null,
-      lineAmountCents: null,
-      display: `${(pct * 100).toFixed(2)}%`
-    };
-  }
-
-  if (model === "text") {
-    return {
-      include: true,
-      model,
-      frequency,
-      quantity,
-      unitAmountCents: null,
-      lineAmountCents: null,
-      display: "Text-based pricing"
-    };
-  }
-
+  // non-numeric models are excluded for strict pricing correctness
   return { include: false, model, frequency, quantity };
 }
 
@@ -169,14 +159,25 @@ function extractFromSideBySide(lines, sideBySide, context, options = {}) {
     if (col?.isSelected !== true) continue;
 
     const frequency = col?.frequency || "once";
-    const quantity = typeof col?.quantity?.current === "number" ? col.quantity.current : 1;
-    const unitCents = normalizeToCents(
-      typeof col?.price === "number" ? col.price : null,
-      options.priceUnitMode
-    );
+    const quantityCurrent = typeof col?.quantity?.current === "number" ? col.quantity.current : 1;
+    const quantity = quantityCurrent;
+
+    const model = typeof col?.priceModel === "string" ? col.priceModel : "fixed";
+    if (model === "none") continue;
+
+    const rawPrice =
+      typeof col?.price === "number"
+        ? col.price
+        : typeof col?.price?.value === "number"
+          ? col.price.value
+          : null;
+
+    const unitCents = normalizeToCents(rawPrice, options.priceUnitMode);
     if (unitCents === null) continue;
 
-    const lineAmountCents = unitCents * quantity;
+    const lineAmountCents = Math.round(unitCents * quantity);
+    if (!(quantity > 0)) continue;
+    if (lineAmountCents <= 100) continue;
 
     pushLine(lines, {
       category,

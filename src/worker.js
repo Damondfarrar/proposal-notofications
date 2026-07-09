@@ -24,6 +24,9 @@ function checksumPayload(proposal, extracted) {
 
 async function processOnce() {
   const api = new ApiClient(config.api);
+  console.log(
+    `[worker] API auth config | header=${config.api.authHeader} scheme=${config.api.authScheme || "(none)"} rawToken=${config.api.authRawToken}`
+  );
   const store = new StateStore(config.worker.dbPath);
   const mailer = new Mailer({
     ...config.smtp,
